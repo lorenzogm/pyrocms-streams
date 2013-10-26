@@ -19,6 +19,8 @@ class Streams_details
         $this->ci =& get_instance();
 
         $this->ci->load->driver('streams');
+        $this->ci->load->model('streams_core/streams_m');
+        $this->ci->load->model('streams_core/fields_m');
     }
 
     /**
@@ -130,6 +132,17 @@ class Streams_details
         return $this->ci->streams->streams->get_stream($stream_slug, $this->namespace);
     }
 
+    public function get_streams_id($streams)
+    {
+        foreach ($streams as $stream_slug)
+        {
+            $streams_id[$stream_slug] = $this->ci->streams->streams->get_stream($stream_slug, $this->namespace);
+            $streams_id[$stream_slug] = $streams_id[$stream_slug]->id;
+        }
+
+        return $streams_id;
+    }
+
     /**
      * build_field_template()
      *
@@ -209,7 +222,23 @@ class Streams_details
         {
             $assign_data = array();
             foreach($field_assignments[$stream] as $field_assignment)
+            {
+                if (!isset($fields[$field_assignment]))
+                {
+                    $fields[$field_assignment] = get_object_vars($this->ci->fields_m->get_field_by_slug($field_assignment, $this->namespace));
+
+                    $fields[$field_assignment]['name'] = $fields[$field_assignment]['field_name'];
+                    unset($fields[$field_assignment]['field_name']);
+                    $fields[$field_assignment]['slug'] = $fields[$field_assignment]['field_slug'];
+                    unset($fields[$field_assignment]['field_slug']);
+                    $fields[$field_assignment]['type'] = $fields[$field_assignment]['field_type'];
+                    unset($fields[$field_assignment]['field_type']);
+                    $fields[$field_assignment]['extra'] = $fields[$field_assignment]['field_data'];
+                    unset($fields[$field_assignment]['field_data']);
+                }
+
                 $assign_data[] = array_merge($this->build_field_template($field_assignment, $stream), $fields[$field_assignment]);
+            }
 
             foreach($assign_data as $assign_data_row)
             {
@@ -272,5 +301,23 @@ class Streams_details
         return 'lang:'.$this->namespace.':'.$type.':'.$label;
     }
 
+    public function delete_streams($streams_slug)
+    {
+        foreach ($streams_slug as $stream_slug)
+        {
+            if ($this->ci->streams_m->check_table_exists($stream_slug, $this->namespace.'_') !== false)
+                $this->ci->streams->streams->delete_stream($stream_slug, $this->namespace);
+        }
+    }
+
+    public function delete_fields($fields_slug)
+    {
+        foreach ($fields_slug as $field_slug)
+        {
+            $this->ci->streams->fields->delete_field($field_slug, $this->namespace);
+        }
+    }
+
 }
+
 /* End of file streams_details.php */
