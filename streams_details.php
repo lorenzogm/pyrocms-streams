@@ -189,6 +189,35 @@ class Streams_details
         return $folders;
     }
 
+    public function insert_field($data)
+    {
+        $where = array(
+            'field_slug' => $data['field_slug'],
+            'field_namespace' => $data['field_namespace']
+            );
+        $field = $this->ci->db->where($where)->get('data_fields')->row();
+
+        if(!$field)
+        {
+            $fields[$data['field_slug']] = $data['field_data'];
+            $this->insert_fields($fields);
+            $field = $this->ci->db->where($where)->get('data_fields')->row();
+        }
+
+        $stream = $this->ci->streams->streams->get_stream($data['stream_slug'], $data['field_namespace']);
+
+        $where = array(
+            'stream_id' => $stream->id,
+            'field_id' => $field->id,
+            );
+        $field_assignment = $this->ci->db->where($where)->get('data_field_assignments')->row();
+
+        if(!$field_assignment)
+        {
+            $this->ci->streams->fields->assign_field($data['field_namespace'], $data['stream_slug'], $data['field_slug'], $data['field_assignment_data']);
+        }
+    }
+
     /**
      * insert_fields()
      *
