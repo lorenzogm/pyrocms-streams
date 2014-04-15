@@ -173,16 +173,21 @@ class Streams_details
         $this->ci->load->library('files/files');
         $this->ci->load->model('files/file_folders_m');
 
-        $folder = Files::search($this->namespace);
-        if( ! $folder['status'])
+        $module_folder = $this->ci->file_folders_m->get_by('slug', $this->namespace);
+
+        if(!(!empty($module_folder) && $module_folder->slug == 'community' && $module_folder->parent_id == 0))
+        {
             Files::create_folder($parent = '0', $folder_name = $this->namespace);
+        }
         $folders[$this->namespace] = $this->ci->file_folders_m->get_by('name', $this->namespace);
 
         foreach ($array as $label)
         {
-            $folder = Files::search($label);
-            if( ! $folder['status'])
+            $folder = $this->ci->file_folders_m->get_by('slug', $label);
+            if ($folder->parent_id != $folders[$this->namespace]->id)
+            {
                 Files::create_folder($parent = $folders[$this->namespace]->id, $folder_name = $label);
+            }
             $folders[$label] = $this->ci->file_folders_m->get_by('name', $label);
         }
 
